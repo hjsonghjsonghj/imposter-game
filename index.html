@@ -134,6 +134,9 @@
   .back .q{font-size:110px;font-weight:700;color:#fff;text-shadow:0 5px 0 rgba(74,64,99,.12);line-height:1}
   .back .tap{margin-top:14px;font-size:22px;font-weight:600;background:rgba(255,255,255,.7);padding:8px 18px;border-radius:999px;animation:bounce 1.4s ease-in-out infinite}
   @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  /* iOS Safari: an animated child ignores the parent's backface-visibility, so stop it while flipped */
+  .back{transform:rotateY(0deg)}
+  .card.flipped .back .tap{animation:none;visibility:hidden}
   .front{background:var(--white);transform:rotateY(180deg);border:6px solid var(--cardc,var(--lilac))}
   .front .emo{font-size:84px;line-height:1;margin-bottom:10px}
   .front .small{font-size:18px;color:var(--ink-soft);margin-bottom:4px}
