@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Imposter – Wer ist es?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#4a4063;
+    --ink-soft:#8a82a3;
+    --pink:#ffc8dd;
+    --pink-d:#ff9fc4;
+    --blue:#bde0fe;
+    --blue-d:#8cc6fb;
+    --mint:#c7f2e3;
+    --mint-d:#8fdfc2;
+    --yellow:#fff3b0;
+    --yellow-d:#ffe270;
+    --lilac:#e2d4ff;
+    --lilac-d:#c4a8ff;
+    --peach:#ffd8be;
+    --peach-d:#ffb88a;
+    --white:#fffdfa;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:'Fredoka',system-ui,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(160deg,#fef6ff 0%,#eef7ff 50%,#f0fff8 100%);
+    min-height:100dvh;
+    overflow-x:hidden;
+    touch-action:manipulation;
+    user-select:none;-webkit-user-select:none;
+  }
+  /* soft floating blobs */
+  .blob{position:fixed;border-radius:50%;filter:blur(2px);opacity:.55;z-index:0;pointer-events:none}
+  .b1{width:220px;height:220px;background:var(--pink);top:-60px;left:-70px}
+  .b2{width:180px;height:180px;background:var(--blue);top:30%;right:-80px}
+  .b3{width:240px;height:240px;background:var(--mint);bottom:-90px;left:-40px}
+  .b4{width:120px;height:120px;background:var(--yellow);bottom:18%;right:10%}
+
+  .app{
+    position:relative;z-index:1;
+    max-width:520px;margin:0 auto;
+    min-height:100dvh;
+    padding:calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 48px);
+    display:flex;flex-direction:column;
+  }
+  .screen{display:none;flex:1;flex-direction:column;align-items:center;animation:pop .35s ease}
+  .screen.active{display:flex}
+  @keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  h1{font-size:44px;margin:10px 0 0;font-weight:700;letter-spacing:.5px;text-align:center;line-height:1.05}
+  h1 .i{display:inline-block;animation:wiggle 2.4s ease-in-out infinite}
+  @keyframes wiggle{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+  .sub{color:var(--ink-soft);font-size:18px;margin:6px 0 22px;text-align:center}
+
+  .panel{
+    width:100%;background:rgba(255,255,255,.75);
+    border-radius:28px;padding:20px;margin-bottom:16px;
+    box-shadow:0 6px 0 rgba(74,64,99,.06),0 12px 30px rgba(74,64,99,.06);
+  }
+  .label{font-size:18px;font-weight:600;margin:0 0 12px;text-align:center}
+
+  .counter{display:flex;align-items:center;justify-content:center;gap:18px}
+  .round{
+    width:64px;height:64px;border-radius:50%;border:none;
+    font:700 34px 'Fredoka';color:var(--ink);cursor:pointer;
+    box-shadow:0 5px 0 rgba(74,64,99,.15);transition:transform .1s;
+  }
+  .round:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(74,64,99,.15)}
+  .round.minus{background:var(--blue)}
+  .round.plus{background:var(--pink)}
+  .round:disabled{opacity:.35}
+  .count{font-size:64px;font-weight:700;min-width:80px;text-align:center}
+  .faces{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:10px;font-size:26px;min-height:34px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+  .chip{
+    border:none;border-radius:999px;padding:10px 14px;
+    font:500 17px 'Fredoka';color:var(--ink);cursor:pointer;
+    background:#f1eef7;transition:transform .1s,background .2s;
+  }
+  .chip.on{background:var(--c,var(--lilac));box-shadow:inset 0 0 0 2px rgba(74,64,99,.15)}
+  .chip:active{transform:scale(.95)}
+
+  .btn{
+    width:100%;border:none;border-radius:24px;padding:18px;
+    font:700 24px 'Fredoka';color:var(--ink);cursor:pointer;
+    background:var(--mint-d);box-shadow:0 6px 0 #6cc6a5;
+    transition:transform .1s,box-shadow .1s;margin-top:auto;
+  }
+  .btn:active{transform:translateY(5px);box-shadow:0 1px 0 #6cc6a5}
+  .btn.pink{background:var(--pink-d);box-shadow:0 6px 0 #f07aa8}
+  .btn.pink:active{box-shadow:0 1px 0 #f07aa8}
+  .btn.lilac{background:var(--lilac-d);box-shadow:0 6px 0 #a283ee}
+  .btn.lilac:active{box-shadow:0 1px 0 #a283ee}
+  .btn.ghost{background:#fff;box-shadow:0 6px 0 #e3dff0;font-size:20px;margin-top:12px}
+  .btn.ghost:active{box-shadow:0 1px 0 #e3dff0}
+  .btn.hidden{visibility:hidden}
+
+  /* pass screen */
+  .who{font-size:22px;color:var(--ink-soft);margin:6px 0 0}
+  .pname{font-size:42px;font-weight:700;margin:0 0 6px}
+  .dots{display:flex;gap:8px;margin-bottom:16px}
+  .dot{width:12px;height:12px;border-radius:50%;background:#e4e0ee}
+  .dot.done{background:var(--mint-d)}
+  .dot.now{background:var(--pink-d);transform:scale(1.3)}
+
+  .stage{perspective:1200px;width:100%;display:flex;justify-content:center;margin:4px 0 14px}
+  .card{
+    position:relative;width:min(78vw,320px);aspect-ratio:3/4;
+    transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,1.4,.5,1);
+    cursor:pointer;
+  }
+  .card.flipped{transform:rotateY(180deg)}
+  .face{
+    position:absolute;inset:0;border-radius:30px;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;text-align:center;
+    box-shadow:0 10px 0 rgba(74,64,99,.10),0 18px 40px rgba(74,64,99,.12);
+  }
+  .back{
+    background:
+      radial-gradient(circle at 20% 20%,rgba(255,255,255,.55) 0 18px,transparent 19px),
+      radial-gradient(circle at 80% 75%,rgba(255,255,255,.45) 0 26px,transparent 27px),
+      radial-gradient(circle at 75% 18%,rgba(255,255,255,.35) 0 10px,transparent 11px),
+      var(--cardc,var(--lilac));
+    border:6px solid #fff;
+  }
+  .back .q{font-size:110px;font-weight:700;color:#fff;text-shadow:0 5px 0 rgba(74,64,99,.12);line-height:1}
+  .back .tap{margin-top:14px;font-size:22px;font-weight:600;background:rgba(255,255,255,.7);padding:8px 18px;border-radius:999px;animation:bounce 1.4s ease-in-out infinite}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  .front{background:var(--white);transform:rotateY(180deg);border:6px solid var(--cardc,var(--lilac))}
+  .front .emo{font-size:84px;line-height:1;margin-bottom:10px}
+  .front .small{font-size:18px;color:var(--ink-soft);margin-bottom:4px}
+  .front .word{font-size:44px;font-weight:700;line-height:1.1;word-break:break-word}
+  .front .imp{font-size:34px;font-weight:700;color:#e0679a;line-height:1.1}
+  .front .hintbox{margin-top:16px;background:var(--yellow);border-radius:18px;padding:10px 16px}
+  .front .hintbox .small{margin:0}
+  .front .hint{font-size:32px;font-weight:700}
+  .front .shh{margin-top:14px;font-size:16px;color:var(--ink-soft)}
+  .note{font-size:16px;color:var(--ink-soft);text-align:center;min-height:22px;margin-bottom:10px}
+
+  /* ready screen */
+  .big-emoji{font-size:90px;margin:16px 0 4px;animation:wiggle 2.4s ease-in-out infinite}
+  .starter{font-size:30px;font-weight:700;text-align:center;margin:4px 0}
+  /* timer */
+  .timer-panel{display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px;margin-bottom:20px}
+  .ring{position:relative;width:150px;height:150px}
+  .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring circle{fill:none;stroke-width:12;stroke-linecap:round}
+  .ring .track{stroke:#efeaf7}
+  .ring .prog{stroke:var(--mint-d);stroke-dasharray:326.73;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke .4s}
+  .ring.warn .prog{stroke:var(--peach-d)}
+  .ring.end .prog{stroke:var(--pink-d)}
+  .time{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:700}
+  .ring.end .time{font-size:26px;color:#e0679a;text-align:center;line-height:1.1;animation:bounce 1s ease-in-out infinite}
+  .tbtn{border:none;border-radius:999px;padding:10px 22px;font:600 18px 'Fredoka';color:var(--ink);background:var(--blue);cursor:pointer;box-shadow:0 4px 0 var(--blue-d)}
+  .tbtn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--blue-d)}
+
+  /* reveal */
+  .reveal{text-align:center}
+  .reveal .r1{font-size:20px;color:var(--ink-soft)}
+  .reveal .r2{font-size:40px;font-weight:700;color:#e0679a;margin:2px 0 12px}
+  .reveal .r3{font-size:20px;color:var(--ink-soft)}
+  .reveal .r4{font-size:36px;font-weight:700}
+
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(74,64,99,.35);display:none;align-items:center;justify-content:center;z-index:10;padding:24px}
+  .modal.show{display:flex}
+  .modal .box{background:#fff;border-radius:28px;padding:24px;max-width:360px;width:100%;text-align:center;animation:pop .25s ease}
+  .modal .box p{font-size:22px;font-weight:600;margin:0 0 18px}
+  .row{display:flex;gap:10px}
+  .row .btn{font-size:20px;padding:14px;margin-top:0}
+
+  .confetti{position:fixed;top:-20px;font-size:26px;z-index:20;pointer-events:none;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
+
+<div class="app">
+
+  <!-- SETUP -->
+  <section class="screen active" id="setup">
+    <h1><span class="i">🕵️</span> Imposter</h1>
+    <p class="sub">Wer hat das geheime Wort nicht?</p>
+
+    <div class="panel">
+      <p class="label">Wie viele spielen mit?</p>
+      <div class="counter">
+        <button class="round minus" id="minus" aria-label="weniger">–</button>
+        <div class="count" id="count">3</div>
+        <button class="round plus" id="plus" aria-label="mehr">+</button>
+      </div>
+      <div class="faces" id="faces"></div>
+    </div>
+
+    <button class="btn" id="start">Los geht's! 🚀</button>
+  </section>
+
+  <!-- PASS & REVEAL -->
+  <section class="screen" id="pass">
+    <p class="who">Gib das Gerät an</p>
+    <p class="pname" id="pname">Spieler 1</p>
+    <div class="dots" id="dots"></div>
+
+    <div class="stage" id="stage"></div>
+    <p class="note" id="note">Nur du darfst hinschauen! 🙈</p>
+
+    <button class="btn pink hidden" id="next">Weiter ➜</button>
+  </section>
+
+  <!-- READY -->
+  <section class="screen" id="ready">
+    <div class="big-emoji" style="font-size:54px;margin:4px 0 0">🎉</div>
+    <h1 style="font-size:30px;margin-top:4px">Alle haben ihre Karte!</h1>
+    <p class="sub" style="margin:4px 0 10px">Jetzt geht's los:</p>
+    <div class="panel" style="text-align:center;padding:14px 16px;margin-bottom:12px">
+      <p class="starter" id="starter" style="font-size:26px;margin:0">Spieler 2 fängt an</p>
+    </div>
+    <div class="panel timer-panel">
+      <div class="ring" id="ring">
+        <svg viewBox="0 0 120 120">
+          <circle class="track" cx="60" cy="60" r="52"/>
+          <circle class="prog" id="prog" cx="60" cy="60" r="52"/>
+        </svg>
+        <div class="time" id="time">5:00</div>
+      </div>
+      <button class="tbtn" id="tToggle">⏸ Pause</button>
+    </div>
+    <button class="btn lilac" id="showReveal">Auflösung 👀</button>
+  </section>
+
+  <!-- RESULT -->
+  <section class="screen" id="result">
+    <div class="big-emoji">🕵️</div>
+    <div class="panel reveal">
+      <div class="r1">Der Imposter war</div>
+      <div class="r2" id="rImp">Spieler 2</div>
+      <div class="r3">Das geheime Wort war</div>
+      <div class="r4" id="rWord">🍕 Pizza</div>
+    </div>
+    <button class="btn" id="again">Nochmal spielen 🔁</button>
+    <button class="btn ghost" id="back">Einstellungen ändern</button>
+  </section>
+</div>
+
+<div class="modal" id="modal">
+  <div class="box">
+    <p>Wirklich auflösen?<br><span style="font-size:17px;font-weight:400;color:var(--ink-soft)">Habt ihr schon abgestimmt?</span></p>
+    <div class="row">
+      <button class="btn ghost" id="mNo" style="margin-top:0">Noch nicht</button>
+      <button class="btn lilac" id="mYes">Ja!</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATS = {
+  tiere: { name:'🐶 Tiere', c:'var(--peach)', words:[
+    ['Hund','🐕','Haustier'],['Katze','🐈','Schnurrhaare'],['Elefant','🐘','groß'],
+    ['Pinguin','🐧','Eis'],['Giraffe','🦒','lang'],['Hase','🐰','Ostern'],
+    ['Pferd','🐴','reiten'],['Biene','🐝','Honig'],['Delfin','🐬','Meer'],
+    ['Löwe','🦁','Afrika'],['Eule','🦉','Nacht'],['Schildkröte','🐢','langsam'],
+    ['Affe','🐒','Banane'],['Frosch','🐸','Teich']
+  ]},
+  essen: { name:'🍕 Essen', c:'var(--yellow)', words:[
+    ['Pizza','🍕','Italien'],['Eis','🍦','kalt'],['Banane','🍌','gelb'],
+    ['Pommes','🍟','Ketchup'],['Schokolade','🍫','süß'],['Apfel','🍎','Baum'],
+    ['Nudeln','🍝','Topf'],['Brezel','🥨','Bäcker'],['Popcorn','🍿','Kino'],
+    ['Erdbeere','🍓','rot'],['Kuchen','🎂','Geburtstag'],['Müsli','🥣','Frühstück'],
+    ['Pfannkuchen','🥞','Pfanne'],['Karotte','🥕','Hase']
+  ]},
+  schule: { name:'✏️ Schule', c:'var(--blue)', words:[
+    ['Schulranzen','🎒','tragen'],['Bleistift','✏️','Holz'],['Radiergummi','🧽','Fehler'],
+    ['Tafel','🏫','Klassenzimmer'],['Pause','🔔','Hof'],['Lehrerin','👩‍🏫','erklären'],
+    ['Schere','✂️','schneiden'],['Turnhalle','🤸','Sport'],['Hausaufgaben','📚','zu Hause'],
+    ['Lineal','📏','gerade']
+  ]},
+  zuhause: { name:'🏠 Zuhause', c:'var(--pink)', words:[
+    ['Bett','🛏️','schlafen'],['Kühlschrank','🧊','kalt'],['Badewanne','🛁','Wasser'],
+    ['Sofa','🛋️','gemütlich'],['Fernseher','📺','Bildschirm'],['Lampe','💡','hell'],
+    ['Zahnbürste','🪥','morgens'],['Kissen','🛌','weich'],['Spiegel','🪞','Gesicht'],
+    ['Waschmaschine','🧺','drehen']
+  ]},
+  natur: { name:'🌈 Natur & Wetter', c:'var(--mint)', words:[
+    ['Regenbogen','🌈','Farben'],['Schnee','❄️','Winter'],['Sonne','☀️','warm'],
+    ['Gewitter','⛈️','laut'],['Wald','🌲','grün'],['Strand','🏖️','Sand'],
+    ['Berg','⛰️','hoch'],['Mond','🌙','Nacht'],['Blume','🌸','Frühling'],
+    ['Vulkan','🌋','heiß']
+  ]},
+  spass: { name:'⚽ Spiel & Spaß', c:'var(--lilac)', words:[
+    ['Fußball','⚽','Tor'],['Fahrrad','🚲','Räder'],['Schwimmbad','🏊','nass'],
+    ['Trampolin','🤸','springen'],['Geburtstag','🎉','Kerzen'],['Zirkus','🎪','Clown'],
+    ['Schaukel','🛝','Spielplatz'],['Lego','🧱','bauen'],['Weihnachten','🎄','Dezember'],
+    ['Rakete','🚀','Weltall'],['Zauberer','🧙','Hut'],['Drache','🐉','Feuer'],
+    ['Pirat','🏴‍☠️','Schatz'],['Roboter','🤖','Metall']
+  ]}
+};
+const CARD_COLORS = ['var(--lilac)','var(--pink)','var(--blue)','var(--mint)','var(--peach)','var(--yellow)'];
+const FACES = ['🐻','🐰','🦊','🐼','🐸','🐯','🐨','🐷','🐵','🦄','🐙','🐥'];
+
+const MIN=3, MAX=12;
+let players = 3;
+let game = null;           // {word, emoji, hint, imposter, starter}
+let current = 0;
+let revealed = false;
+let recent = [];           // avoid repeats
+
+try{
+  const p = parseInt(localStorage.getItem('imp_players'));
+  if(p>=MIN && p<=MAX) players = p;
+}catch(e){}
+
+const $ = id => document.getElementById(id);
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+/* ---------- setup ---------- */
+function renderCount(){
+  $('count').textContent = players;
+  $('minus').disabled = players<=MIN;
+  $('plus').disabled = players>=MAX;
+  $('faces').textContent = FACES.slice(0,players).join(' ');
+}
+$('minus').onclick=()=>{ if(players>MIN){players--;renderCount();} };
+$('plus').onclick =()=>{ if(players<MAX){players++;renderCount();} };
+
+/* ---------- game ---------- */
+function pickWord(){
+  let pool=[];
+  Object.values(CATS).forEach(cat=>cat.words.forEach(w=>pool.push(w)));
+  let fresh = pool.filter(w=>!recent.includes(w[0]));
+  if(!fresh.length){ recent=[]; fresh=pool; }
+  const w = fresh[Math.floor(Math.random()*fresh.length)];
+  recent.push(w[0]); if(recent.length>20) recent.shift();
+  return w;
+}
+function newGame(){
+  try{
+    localStorage.setItem('imp_players',players);
+  }catch(e){}
+  const [word,emoji,hint] = pickWord();
+  game = {
+    word, emoji, hint,
+    imposter: Math.floor(Math.random()*players),
+    starter: Math.floor(Math.random()*players)
+  };
+  current = 0;
+  renderTurn();
+  show('pass');
+}
+function pname(i){ return FACES[i]+' Spieler '+(i+1); }
+
+function renderTurn(){
+  revealed = false;
+  $('pname').textContent = pname(current);
+  $('next').classList.add('hidden');
+  $('next').textContent = current===players-1 ? 'Fertig ✔' : 'Weiter ➜';
+  $('note').textContent = 'Nur du darfst hinschauen! 🙈';
+
+  const dots = $('dots'); dots.innerHTML='';
+  for(let i=0;i<players;i++){
+    const d=document.createElement('div');
+    d.className='dot'+(i<current?' done':i===current?' now':'');
+    dots.appendChild(d);
+  }
+
+  // build a brand-new card each turn so nothing from the previous player leaks
+  const isImp = current===game.imposter;
+  const color = CARD_COLORS[current % CARD_COLORS.length];
+  const card = document.createElement('div');
+  card.className='card';
+  card.style.setProperty('--cardc',color);
+  card.innerHTML = `
+    <div class="face back">
+      <div class="q">?</div>
+      <div class="tap">Tippen 👆</div>
+    </div>
+    <div class="face front">
+      ${isImp ? `
+        <div class="emo">🕵️</div>
+        <div class="imp">Du bist der Imposter!</div>
+        <div class="hintbox">
+          <div class="small">Dein Hinweis:</div>
+          <div class="hint">${game.hint}</div>
+        </div>
+        <div class="shh">Pssst… lass dich nicht erwischen!</div>
+      ` : `
+        <div class="emo">${game.emoji}</div>
+        <div class="small">Das geheime Wort ist</div>
+        <div class="word">${game.word}</div>
+        <div class="shh">Pssst… nicht verraten!</div>
+      `}
+    </div>`;
+  card.onclick = ()=>{
+    card.classList.toggle('flipped');
+    if(!revealed){
+      revealed = true;
+      $('next').classList.remove('hidden');
+    }
+    $('note').textContent = card.classList.contains('flipped')
+      ? 'Gemerkt? Tippe nochmal zum Verstecken.'
+      : 'Jetzt auf „'+$('next').textContent.replace(/ .*/,'')+'“ drücken.';
+  };
+  const stage = $('stage'); stage.innerHTML=''; stage.appendChild(card);
+}
+
+$('next').onclick = ()=>{
+  if(!revealed) return;
+  if(current < players-1){
+    current++;
+    renderTurn();
+  } else {
+    $('starter').textContent = pname(game.starter)+' fängt an!';
+    show('ready');
+    startTimer();
+  }
+};
+
+$('showReveal').onclick = ()=> $('modal').classList.add('show');
+$('mNo').onclick = ()=> $('modal').classList.remove('show');
+$('mYes').onclick = ()=>{
+  $('modal').classList.remove('show');
+  stopTimer();
+  $('rImp').textContent = pname(game.imposter);
+  $('rWord').textContent = game.emoji+' '+game.word;
+  show('result');
+  confetti();
+};
+$('again').onclick = ()=>{ unlockAudio(); newGame(); };
+$('back').onclick = ()=>{ renderCount(); show('setup'); };
+$('start').onclick = ()=>{ unlockAudio(); newGame(); };
+
+/* ---------- timer (5 min) ---------- */
+const TOTAL = 5*60;
+const CIRC = 326.73;
+let endAt = 0, remaining = TOTAL, tick = null, running = false;
+let actx = null;
+
+function unlockAudio(){
+  try{
+    if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+    if(actx.state==='suspended') actx.resume();
+  }catch(e){}
+}
+function ding(){
+  if(!actx) return;
+  try{
+    [0,0.35,0.7].forEach((t,i)=>{
+      const o=actx.createOscillator(), g=actx.createGain();
+      o.type='sine'; o.frequency.value=[880,988,1175][i];
+      g.gain.setValueAtTime(0.0001,actx.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(0.35,actx.currentTime+t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+t+0.3);
+      o.connect(g).connect(actx.destination);
+      o.start(actx.currentTime+t); o.stop(actx.currentTime+t+0.32);
+    });
+  }catch(e){}
+}
+function drawTimer(){
+  const s = Math.max(0,Math.ceil(remaining));
+  const ring = $('ring');
+  ring.classList.toggle('warn', s<=60 && s>0);
+  ring.classList.toggle('end', s===0);
+  $('time').textContent = s===0 ? 'Zeit ist um! ⏰' : Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+  $('prog').style.strokeDashoffset = CIRC*(1 - s/TOTAL);
+}
+function loop(){
+  remaining = (endAt - Date.now())/1000;
+  if(remaining<=0){
+    remaining = 0; running=false; clearInterval(tick); tick=null;
+    $('tToggle').textContent='🔁 Neu starten';
+    drawTimer(); ding();
+    return;
+  }
+  drawTimer();
+}
+function startTimer(){
+  stopTimer();
+  remaining = TOTAL;
+  $('prog').style.transition='none'; drawTimer();
+  void $('prog').getBoundingClientRect();
+  $('prog').style.transition='';
+  resumeTimer();
+}
+function resumeTimer(){
+  endAt = Date.now() + remaining*1000;
+  running = true;
+  $('tToggle').textContent='⏸ Pause';
+  tick = setInterval(loop,250);
+}
+function pauseTimer(){
+  remaining = Math.max(0,(endAt - Date.now())/1000);
+  running = false; clearInterval(tick); tick=null;
+  $('tToggle').textContent='▶ Weiter';
+}
+function stopTimer(){ running=false; if(tick){clearInterval(tick);tick=null;} }
+$('tToggle').onclick = ()=>{
+  unlockAudio();
+  if(remaining<=0) startTimer();
+  else if(running) pauseTimer();
+  else resumeTimer();
+};
+
+function confetti(){
+  const items=['🎉','⭐','💖','🌈','✨','🎈'];
+  for(let i=0;i<26;i++){
+    const s=document.createElement('div');
+    s.className='confetti';
+    s.textContent=items[i%items.length];
+    s.style.left=Math.random()*100+'vw';
+    s.style.animationDuration=(2+Math.random()*2)+'s';
+    s.style.animationDelay=(Math.random()*.6)+'s';
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),5000);
+  }
+}
+
+renderCount();
+</script>
+</body>
+</html>
