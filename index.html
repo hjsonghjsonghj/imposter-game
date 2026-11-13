@@ -6,9 +6,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Imposter-Spiel mit Ella</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/fredoka-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+  /* Fredoka (SIL Open Font License, see fonts/OFL.txt), stored locally so the game works offline */
+  @font-face{
+    font-family:'Fredoka';font-style:normal;font-weight:300 700;font-display:swap;
+    src:url(fonts/fredoka-latin-wght.woff2) format('woff2');
+  }
   :root{
     --ink:#4a4063;
     --ink-soft:#8a82a3;
@@ -860,6 +864,11 @@ function confetti(){
 }
 
 renderCount();
+
+/* offline support: cache the game on first visit */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
 </script>
 </body>
 </html>
